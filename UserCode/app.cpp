@@ -21,28 +21,30 @@ extern "C" void TIM_Callback_1kHz(TIM_HandleTypeDef* htim)
 extern "C" void Init(void* argument)
 {
     (void)argument;
-
     Device::app_device_init();
 
-    // 夹爪：等上线 + 上电归零
-    while (!Device::motor::gripper_motor->isConnected())
-        osDelay(1);
-    osDelay(100);
+    constexpr uint32_t kConnectTimeoutMs = 1000U;   // 每个电机最多等 1s
 
-    Gripper::gripper_init();
-    Gripper::gripper_control_init();
+    // ---- 夹爪：独立等待，超时跳过 ----
+    uint32_t t = 0;
+    while (!Device::motor::gripper_motor->isConnected() && t < kConnectTimeoutMs)
+    { osDelay(1); ++t; }
+    if (Device::motor::gripper_motor->isConnected())
+    {
+        osDelay(100);                       // 等 auto_zero 第 50 帧归零
+        Gripper::gripper_init();
+        Gripper::gripper_control_init();
+    }
 
-    // DM：等上线 + 上电归零（第50帧，约50ms）
-    while (!Device::motor::dm_motor->isConnected())
-        osDelay(1);
-    osDelay(100);
-
+    // ---- DM：无条件初始化（DM 是应答式，必须先发使能帧才能收到反馈）----
     DmMotor::dm_motor_init();
     DmMotor::dm_control_init();
 
-    // 启动 1kHz 定时器（TIM5）
+
+    // ---- 无条件启动 1kHz 中断（解耦关键）----
     HAL_TIM_RegisterCallback(&htim5, HAL_TIM_PERIOD_ELAPSED_CB_ID, TIM_Callback_1kHz);
     HAL_TIM_Base_Start_IT(&htim5);
 
     osThreadExit();
 }
+

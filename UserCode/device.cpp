@@ -24,7 +24,7 @@ constexpr motors::DMMotor::Config dm_motor_config = {
     .vel_max_rad        = 10.0f,                            // VMAX
     .tor_max            = 28.0f,                            // TMAX
     .default_angle_zero = 0.0f,
-    .auto_zero          = true,
+    .auto_zero          = false,     // ← 从 true 改成 false
     .reverse            = false,
     .reduction_rate     = 1.0f,
 };

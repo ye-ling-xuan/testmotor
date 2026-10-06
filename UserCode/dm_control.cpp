@@ -139,6 +139,8 @@ extern "C" void DmMotorControl(void* argument)
     (void)argument;
     for (;;)
     {
+        dm_motor->ping();   // ← 新增：未使能/失能时维持一收一回，并补发使能帧
+        
         bool req0  = key0.update();
         bool req90 = key90.update();
 
@@ -156,9 +158,15 @@ extern "C" void DmMotorControl(void* argument)
 void dm_motor_init()
 {
     dm_pos = new MotorPosController(dm_motor, kPosConfig);
-    dm_pos->enable();                  // 顺带发 DM 使能帧
-    dm_pos->setRef(current_angle());   // 锁当前角，防止上电跳动
+    dm_pos->enable();                       // ① 先发使能帧，DM 收到后开始回反馈
+
+    // ② 等第一帧反馈（使能后通常几 ms 内），此时 getAngle() 才有真实值
+    for (uint32_t t = 0; t < 500 && !dm_motor->isConnected(); ++t)
+        osDelay(1);
+
+    dm_pos->setRef(current_angle());        // ③ 锁当前角，防止上电跳动
 }
+
 
 void dm_control_init()
 {
