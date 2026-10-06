@@ -6,5 +6,9 @@ ioc_file = "testmotor.ioc"
 
 [dependencies]
 packages = [
+    "MotorDrivers::DJI",
+    "MotorDrivers::Controller",
+    "MotorDrivers::DM",
+    "memory::StaticArena",
     "utils",
 ]
