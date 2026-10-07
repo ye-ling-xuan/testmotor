@@ -47,7 +47,7 @@ float current_angle()
 
 void deg0_fsm_start()
 {
-    dm_pos->setRef(kDeg0);
+    dm_pos->setRef(kDeg0, 6.0f);
     dbg_target     = kDeg0;
     deg0_state     = Deg0FsmState::Moving;
     state_start_ms = HAL_GetTick();
@@ -78,7 +78,7 @@ bool deg0_fsm_busy() { return deg0_state != Deg0FsmState::Idle; }
 
 void deg90_fsm_start()
 {
-    dm_pos->setRef(kDeg90);
+    dm_pos->setRef(kDeg90, 6.0f);
     dbg_target     = kDeg90;
     deg90_state    = Deg90FsmState::Moving;
     state_start_ms = HAL_GetTick();
