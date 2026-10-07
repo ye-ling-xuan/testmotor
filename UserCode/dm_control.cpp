@@ -141,6 +141,15 @@ extern "C" void DmMotorControl(void* argument)
     {
         dm_motor->ping();   // ← 新增：未使能/失能时维持一收一回，并补发使能帧
         
+        // 上电"编码器未识别"等锁存故障：检测到就清故障 + 重新使能
+        const auto st = dm_motor->state();
+        if (st != motors::DMMotor::State::Enabled &&
+            st != motors::DMMotor::State::Disabled)
+        {
+            dm_motor->clearFault();
+            dm_motor->enable();
+        }
+        
         bool req0  = key0.update();
         bool req90 = key90.update();
 
