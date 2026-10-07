@@ -132,6 +132,21 @@ struct Button
 Button key0  { KEY_DEG0_GPIO_Port,  KEY_DEG0_Pin  };
 Button key90 { KEY_DEG90_GPIO_Port, KEY_DEG90_Pin };
 
+// 发送 DM 清除故障帧（FF FF FF FF FF FF FF FB → StdId 0x109），
+// 不依赖库里的 clearFault()，只在 UserCode 里拼原始 CAN 帧。
+void dm_clear_fault()
+{
+    constexpr uint8_t kClearErr[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB };
+
+    CAN_TxHeaderTypeDef hdr{};
+    hdr.StdId = 0x109;            // Pos(0x100) | id0(0x09)，与 device.cpp 里 dm_motor_config 一致
+    hdr.IDE   = CAN_ID_STD;
+    hdr.RTR   = CAN_RTR_DATA;
+    hdr.DLC   = 8;
+
+    CAN_SendMessage(&hcan1, &hdr, kClearErr);
+}
+
 } // namespace
 
 extern "C" void DmMotorControl(void* argument)
@@ -146,10 +161,10 @@ extern "C" void DmMotorControl(void* argument)
         if (st != motors::DMMotor::State::Enabled &&
             st != motors::DMMotor::State::Disabled)
         {
-            dm_motor->clearFault();
+            dm_clear_fault();
             dm_motor->enable();
         }
-        
+
         bool req0  = key0.update();
         bool req90 = key90.update();
 
